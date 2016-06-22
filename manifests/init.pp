@@ -37,7 +37,7 @@ class puppet (
   $master_package_name      = 'puppetserver',
   $master_package_ensure    = 'installed',
   $master_service_resource  = 'puppetserver',
-
+  $master_fileserver_config = { },
 ) {
 
   # Parameter validation
@@ -45,7 +45,8 @@ class puppet (
     $conf_main,
     $conf_agent,
     $conf_master,
-    $conf_user
+    $conf_user,
+    $master_fileserver_config,
   )
   validate_bool(
     $conf_main_hiera_merge,

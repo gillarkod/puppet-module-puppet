@@ -839,6 +839,88 @@ describe 'puppet', :type => :class do
         end # context "[agent]"
 
       end # context "with configuration"
+      context 'with fileserver configuration' do
+        let(:params) do
+          default_params.merge(
+              {
+                  :'master_fileserver_config' => {
+                      'files' => {},
+                      'miles' => {},
+                  },
+              }
+          )
+        end
+        it { is_expected.to compile.with_all_deps }
+        it { is_expected.to contain_class('puppet') }
+        it { is_expected.to contain_class('puppet::master') }
+        it { is_expected.to contain_class('puppet::config').that_notifies('Service[puppetserver]') }
+        it { is_expected.to contain_service('puppetserver').that_comes_before('Cron[puppet_cron_interval]') }
+        it { is_expected.to contain_file('/etc/puppetlabs/puppet/puppet.conf').with(
+            'owner' => 'root',
+            'group' => 'root',
+            'mode' => '0644'
+        ) }
+        it { is_expected.to contain_cron('puppet_cron_interval').with(
+            'ensure' => 'present',
+            'user' => 'root',
+            'command' => '/opt/puppetlabs/bin/puppet agent --onetime --ignorecache --no-daemonize --no-usecacheonfailure --detailed-exitcodes --no-splay',
+            'minute' => cron_minute,
+            'hour' => '*'
+        ) }
+        # Files fileserver config
+        it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/fileserver.conf files path').with(
+            'section' => 'files',
+            'setting' => 'path',
+            'value' => '/etc/puppetlabs/code/files',
+            'path' => '/etc/puppetlabs/puppet/fileserver.conf',
+            'key_val_separator' => ' ',
+        ) }
+        it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/fileserver.conf files allow').with(
+            'section' => 'files',
+            'setting' => 'allow',
+            'value' => '*',
+            'path' => '/etc/puppetlabs/puppet/fileserver.conf',
+            'key_val_separator' => ' ',
+        ) }
+        it { is_expected.to contain_puppet_authorization__rule('fileserver_files').with(
+            'match_request_path' => '^/file_(metadata|content)s?/files/',
+            'match_request_type' => 'regex',
+            'match_request_method' => ['get', 'post'],
+            'allow' => '*',
+            'sort_order' => 300,
+            'path' => '/etc/puppetlabs/puppetserver/conf.d/auth.conf'
+        ) }
+        it { is_expected.to contain_puppet_authorization__rule('fileserver_files').
+            that_notifies('Service[puppetserver]') }
+
+
+        # Miles fileserver config
+        it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/fileserver.conf miles path').with(
+            'section' => 'miles',
+            'setting' => 'path',
+            'value' => '/etc/puppetlabs/code/miles',
+            'path' => '/etc/puppetlabs/puppet/fileserver.conf',
+            'key_val_separator' => ' ',
+        ) }
+        it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/fileserver.conf miles allow').with(
+            'section' => 'miles',
+            'setting' => 'allow',
+            'value' => '*',
+            'path' => '/etc/puppetlabs/puppet/fileserver.conf',
+            'key_val_separator' => ' ',
+        ) }
+        it { is_expected.to contain_puppet_authorization__rule('fileserver_miles').with(
+            'match_request_path' => '^/file_(metadata|content)s?/miles/',
+            'match_request_type' => 'regex',
+            'match_request_method' => ['get', 'post'],
+            'allow' => '*',
+            'sort_order' => 300,
+            'path' => '/etc/puppetlabs/puppetserver/conf.d/auth.conf'
+        ) }
+        it { is_expected.to contain_puppet_authorization__rule('fileserver_miles').
+            that_notifies('Service[puppetserver]') }
+
+      end # context "with fileserver configuration"
     end
   end # describe 'using role'
   describe 'using nonexistent roles' do

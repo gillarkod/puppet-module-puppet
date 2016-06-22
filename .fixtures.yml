@@ -9,5 +9,8 @@ fixtures:
     hocon:
       repo: 'git://github.com/puppetlabs/puppetlabs-hocon.git'
       ref: '0.9.4'
+    puppet_authorization:
+      repo: 'git://github.com/puppetlabs/puppetlabs-puppet_authorization.git'
+      ref: '0.2.0'
   symlinks:
     puppet: "#{source_dir}"
