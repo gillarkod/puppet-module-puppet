@@ -5,7 +5,7 @@ class puppet::master (
   $master_fileserver_conf   = $::puppet::master_fileserver_config,
 ) inherits ::puppet {
 
-  Class['puppet::config'] ~> Service["${master_service_resource}"] -> Cron['puppet_cron_interval']
+  Class['puppet::config'] ~> Service[$master_service_resource] -> Cron['puppet_cron_interval']
 
   include ::puppet::config
   include ::puppet::agent
