@@ -5,7 +5,7 @@
 #
 
 class puppet (
-  $role                   = 'client',
+  $role                     = 'client',
   # Puppet conf settings
   $conf_path                = '/etc/puppetlabs/puppet/puppet.conf',
   $conf_owner               = 'root',
@@ -20,9 +20,9 @@ class puppet (
   $conf_user                = { },
   $conf_user_hiera_merge    = false,
   # Client Config
-  $client_package_name    = 'puppet-agent',
-  $client_package_ensure  = 'installed',
-  $client_agent_service   = {
+  $client_package_name      = 'puppet-agent',
+  $client_package_ensure    = 'installed',
+  $client_agent_service     = {
     'ensure'          => 'present',
     'type'            => 'cron',
     'interval'        => 30,
@@ -33,6 +33,11 @@ class puppet (
     'minute'          => undef,
     'hour'            => '*',
   },
+  # Master Config
+  $master_package_name      = 'puppetserver',
+  $master_package_ensure    = 'installed',
+  $master_service_resource  = 'puppetserver',
+  $master_fileserver_config = { },
 ) {
 
   # Parameter validation
@@ -40,7 +45,8 @@ class puppet (
     $conf_main,
     $conf_agent,
     $conf_master,
-    $conf_user
+    $conf_user,
+    $master_fileserver_config,
   )
   validate_bool(
     $conf_main_hiera_merge,
@@ -89,6 +95,7 @@ class puppet (
     include ::puppet::client
   }
   elsif $role == 'master' {
+    include ::puppet::master
   }
 
 }

@@ -44,10 +44,8 @@ describe 'puppet', :type => :class do
             'hour' => '*'
         ) }
         it { is_expected.to have_ini_setting_resource_count(0) }
-
-
+        ''
       end # context 'with no configuration'
-
       context 'with custom configuration' do
         it { is_expected.to compile.with_all_deps }
         it { is_expected.to contain_class('puppet') }
@@ -315,7 +313,6 @@ describe 'puppet', :type => :class do
         end # context "[agent]"
 
       end # context "with configuration"
-
       context 'variable type and content validations' do
         validations = {
             'must be hash' => {
@@ -545,8 +542,387 @@ describe 'puppet', :type => :class do
       end # describe "with hiera_data"
 
     end # describe 'client'
-  end # describe 'using role'
+    describe 'master' do
+      default_params = {
+          :'role' => 'master'
+      }
+      context 'with default configuration' do
+        let :params do
+          default_params
+        end
+        it { is_expected.to compile.with_all_deps }
+        it { is_expected.to contain_class('puppet') }
+        it { is_expected.to contain_class('puppet::master') }
+        it { is_expected.to contain_class('puppet::config').that_notifies('Service[puppetserver]') }
+        it { is_expected.to contain_service('puppetserver').that_comes_before('Cron[puppet_cron_interval]') }
+        it { is_expected.to contain_file('/etc/puppetlabs/puppet/puppet.conf').with(
+            'owner' => 'root',
+            'group' => 'root',
+            'mode' => '0644'
+        ) }
+        it { is_expected.to contain_cron('puppet_cron_interval').with(
+            'ensure' => 'present',
+            'user' => 'root',
+            'command' => '/opt/puppetlabs/bin/puppet agent --onetime --ignorecache --no-daemonize --no-usecacheonfailure --detailed-exitcodes --no-splay',
+            'minute' => cron_minute,
+            'hour' => '*'
+        ) }
+        it { is_expected.to have_ini_setting_resource_count(0) }
+      end
+      context 'with custom configuration' do
+        let :params do
+          default_params
+        end
+        it { is_expected.to compile.with_all_deps }
+        it { is_expected.to contain_class('puppet') }
+        it { is_expected.to contain_class('puppet::master') }
+        it { is_expected.to contain_class('puppet::config').that_notifies('Service[puppetserver]') }
+        it { is_expected.to contain_service('puppetserver').that_comes_before('Cron[puppet_cron_interval]') }
+        it { is_expected.to contain_file('/etc/puppetlabs/puppet/puppet.conf').with(
+            'owner' => 'root',
+            'group' => 'root',
+            'mode' => '0644'
+        ) }
+        it { is_expected.to contain_cron('puppet_cron_interval').with(
+            'ensure' => 'present',
+            'user' => 'root',
+            'command' => '/opt/puppetlabs/bin/puppet agent --onetime --ignorecache --no-daemonize --no-usecacheonfailure --detailed-exitcodes --no-splay',
+            'minute' => cron_minute,
+            'hour' => '*'
+        ) }
+        context 'cron defaults changed' do
+          let(:params) do
+            default_params.merge(
+                {
+                    :'client_agent_service' => {
+                        'type' => 'cron',
+                        'puppet_bin' => '/usr/bin/puppet',
+                        'minute' => '*/20',
+                        'cron_structure' => 'echo "Gonna run puppet now!"; %{puppet_bin} %{puppet_args}'
+                    }
+                })
+          end
+          it { is_expected.to contain_cron('puppet_cron_interval').with(
+              'ensure' => 'present',
+              'user' => 'root',
+              'command' => 'echo "Gonna run puppet now!"; /usr/bin/puppet agent --onetime --ignorecache --no-daemonize --no-usecacheonfailure --detailed-exitcodes --no-splay',
+              'minute' => '*/20',
+              'hour' => '*'
+          ) }
+        end
+        context '[main]' do
+          let(:params) do
+            default_params.merge(
+                {
+                    :'conf_main' => {
+                        'server' => 'puppet.tldr.domain.com',
+                        'ca_server' => 'puppetca.tldr.domain.com',
+                        'certname' => facts[:fqdn]
+                    }
+                })
+          end
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf main certname').with(
+              'section' => 'main',
+              'setting' => 'certname',
+              'value' => facts[:fqdn],
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf main server').with(
+              'section' => 'main',
+              'setting' => 'server',
+              'value' => 'puppet.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf main ca_server').with(
+              'section' => 'main',
+              'setting' => 'ca_server',
+              'value' => 'puppetca.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
 
+        end # context "[main]"
+
+        context '[agent]' do
+          let(:params) do
+            default_params.merge(
+                {
+                    :'conf_agent' => {
+                        'server' => 'puppet.tldr.domain.com',
+                        'ca_server' => 'puppetca.tldr.domain.com',
+                        'certname' => facts[:fqdn]
+                    }
+                })
+          end
+
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent certname').with(
+              'section' => 'agent',
+              'setting' => 'certname',
+              'value' => facts[:fqdn],
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent server').with(
+              'section' => 'agent',
+              'setting' => 'server',
+              'value' => 'puppet.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent ca_server').with(
+              'section' => 'agent',
+              'setting' => 'ca_server',
+              'value' => 'puppetca.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+        end # context "[agent]"
+
+        context '[master]' do
+          let(:params) do
+            default_params.merge(
+                {
+                    :'conf_master' => {
+                        'server' => 'puppet.tldr.domain.com',
+                        'ca_server' => 'puppetca.tldr.domain.com',
+                        'certname' => facts[:fqdn]
+                    }
+                })
+          end
+
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf master certname').with(
+              'section' => 'master',
+              'setting' => 'certname',
+              'value' => facts[:fqdn],
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf master server').with(
+              'section' => 'master',
+              'setting' => 'server',
+              'value' => 'puppet.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf master ca_server').with(
+              'section' => 'master',
+              'setting' => 'ca_server',
+              'value' => 'puppetca.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+        end # context "[master]"
+
+        context '[user]' do
+          let(:params) do
+            default_params.merge(
+                {
+                    :'conf_agent' => {
+                        'server' => 'puppet.tldr.domain.com',
+                        'ca_server' => 'puppetca.tldr.domain.com',
+                        'certname' => facts[:fqdn]
+                    }
+                })
+          end
+
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent certname').with(
+              'section' => 'agent',
+              'setting' => 'certname',
+              'value' => facts[:fqdn],
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent server').with(
+              'section' => 'agent',
+              'setting' => 'server',
+              'value' => 'puppet.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent ca_server').with(
+              'section' => 'agent',
+              'setting' => 'ca_server',
+              'value' => 'puppetca.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+        end # context "[agent]"
+
+        context '[main] & [agent] & [master] & [user]' do
+          let(:params) do
+            default_params.merge(
+                {
+                    :'conf_main' => {
+                        'server' => 'puppet.tldr.domain.com',
+                        'ca_server' => 'puppetca.tldr.domain.com',
+                        'certname' => facts[:fqdn]
+                    },
+                    :'conf_agent' => {
+                        'server' => 'puppet.tldr.domain.com',
+                        'ca_server' => 'puppetca.tldr.domain.com',
+                        'certname' => facts[:fqdn]
+                    },
+                    :'conf_master' => {
+                        'server' => 'puppet.tldr.domain.com',
+                        'ca_server' => 'puppetca.tldr.domain.com',
+                        'certname' => facts[:fqdn]
+                    },
+                    :'conf_user' => {
+                        'server' => 'puppet.tldr.domain.com',
+                        'ca_server' => 'puppetca.tldr.domain.com',
+                        'certname' => facts[:fqdn]
+                    }
+                })
+          end
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf main certname').with(
+              'section' => 'main',
+              'setting' => 'certname',
+              'value' => facts[:fqdn],
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf main server').with(
+              'section' => 'main',
+              'setting' => 'server',
+              'value' => 'puppet.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf main ca_server').with(
+              'section' => 'main',
+              'setting' => 'ca_server',
+              'value' => 'puppetca.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent certname').with(
+              'section' => 'agent',
+              'setting' => 'certname',
+              'value' => facts[:fqdn],
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent server').with(
+              'section' => 'agent',
+              'setting' => 'server',
+              'value' => 'puppet.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent ca_server').with(
+              'section' => 'agent',
+              'setting' => 'ca_server',
+              'value' => 'puppetca.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf master certname').with(
+              'section' => 'master',
+              'setting' => 'certname',
+              'value' => facts[:fqdn],
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf master server').with(
+              'section' => 'master',
+              'setting' => 'server',
+              'value' => 'puppet.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf master ca_server').with(
+              'section' => 'master',
+              'setting' => 'ca_server',
+              'value' => 'puppetca.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent certname').with(
+              'section' => 'agent',
+              'setting' => 'certname',
+              'value' => facts[:fqdn],
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent server').with(
+              'section' => 'agent',
+              'setting' => 'server',
+              'value' => 'puppet.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+          it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/puppet.conf agent ca_server').with(
+              'section' => 'agent',
+              'setting' => 'ca_server',
+              'value' => 'puppetca.tldr.domain.com',
+              'path' => '/etc/puppetlabs/puppet/puppet.conf'
+          ) }
+        end # context "[agent]"
+
+      end # context "with configuration"
+      context 'with fileserver configuration' do
+        let(:params) do
+          default_params.merge(
+              {
+                  :'master_fileserver_config' => {
+                      'files' => {},
+                      'miles' => {},
+                  },
+              }
+          )
+        end
+        it { is_expected.to compile.with_all_deps }
+        it { is_expected.to contain_class('puppet') }
+        it { is_expected.to contain_class('puppet::master') }
+        it { is_expected.to contain_class('puppet::config').that_notifies('Service[puppetserver]') }
+        it { is_expected.to contain_service('puppetserver').that_comes_before('Cron[puppet_cron_interval]') }
+        it { is_expected.to contain_file('/etc/puppetlabs/puppet/puppet.conf').with(
+            'owner' => 'root',
+            'group' => 'root',
+            'mode' => '0644'
+        ) }
+        it { is_expected.to contain_cron('puppet_cron_interval').with(
+            'ensure' => 'present',
+            'user' => 'root',
+            'command' => '/opt/puppetlabs/bin/puppet agent --onetime --ignorecache --no-daemonize --no-usecacheonfailure --detailed-exitcodes --no-splay',
+            'minute' => cron_minute,
+            'hour' => '*'
+        ) }
+        # Files fileserver config
+        it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/fileserver.conf files path').with(
+            'section' => 'files',
+            'setting' => 'path',
+            'value' => '/etc/puppetlabs/code/files',
+            'path' => '/etc/puppetlabs/puppet/fileserver.conf',
+            'key_val_separator' => ' ',
+        ) }
+        it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/fileserver.conf files allow').with(
+            'section' => 'files',
+            'setting' => 'allow',
+            'value' => '*',
+            'path' => '/etc/puppetlabs/puppet/fileserver.conf',
+            'key_val_separator' => ' ',
+        ) }
+        it { is_expected.to contain_puppet_authorization__rule('fileserver_files').with(
+            'match_request_path' => '^/file_(metadata|content)s?/files/',
+            'match_request_type' => 'regex',
+            'match_request_method' => ['get', 'post'],
+            'allow' => '*',
+            'sort_order' => 300,
+            'path' => '/etc/puppetlabs/puppetserver/conf.d/auth.conf'
+        ) }
+        it { is_expected.to contain_puppet_authorization__rule('fileserver_files').
+            that_notifies('Service[puppetserver]') }
+
+
+        # Miles fileserver config
+        it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/fileserver.conf miles path').with(
+            'section' => 'miles',
+            'setting' => 'path',
+            'value' => '/etc/puppetlabs/code/miles',
+            'path' => '/etc/puppetlabs/puppet/fileserver.conf',
+            'key_val_separator' => ' ',
+        ) }
+        it { is_expected.to contain_ini_setting('/etc/puppetlabs/puppet/fileserver.conf miles allow').with(
+            'section' => 'miles',
+            'setting' => 'allow',
+            'value' => '*',
+            'path' => '/etc/puppetlabs/puppet/fileserver.conf',
+            'key_val_separator' => ' ',
+        ) }
+        it { is_expected.to contain_puppet_authorization__rule('fileserver_miles').with(
+            'match_request_path' => '^/file_(metadata|content)s?/miles/',
+            'match_request_type' => 'regex',
+            'match_request_method' => ['get', 'post'],
+            'allow' => '*',
+            'sort_order' => 300,
+            'path' => '/etc/puppetlabs/puppetserver/conf.d/auth.conf'
+        ) }
+        it { is_expected.to contain_puppet_authorization__rule('fileserver_miles').
+            that_notifies('Service[puppetserver]') }
+
+      end # context "with fileserver configuration"
+    end
+  end # describe 'using role'
   describe 'using nonexistent roles' do
     let :params do
       {
