@@ -1,3 +1,8 @@
+# Class: puppet::master
+#
+# Install and configure puppet master service
+#
+
 class puppet::master (
   $master_package_name      = $::puppet::master_package_name,
   $master_package_ensure    = $::puppet::master_package_ensure,
