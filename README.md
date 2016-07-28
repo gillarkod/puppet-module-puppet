@@ -147,6 +147,12 @@ The state that should be realized for the package specified at `::puppet::client
 Configure the puppet agent to run at a specific interval or according to a schedule.
 The only scheduler configurable with this module today is `cron`.
 
+### `::puppet::master_service_manage`
+Whether this module should manage the puppet master resource specified by
+`::puppet::master_service_resource` or not.
+
+*The default is `true`*
+
 ##### Interval or minute
 You can either specify a explicit minute value for cron like `*/5` (run puppet at 5 minute intervals.)
 or use the interval to specify how often puppet should run that way.

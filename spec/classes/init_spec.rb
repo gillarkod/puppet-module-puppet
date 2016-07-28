@@ -610,6 +610,19 @@ describe 'puppet', :type => :class do
               'hour' => '*'
           ) }
         end
+        context 'managing puppet master service disabled' do
+          let(:params) do
+            default_params.merge(
+                {
+                    :master_service_manage => false,
+                }
+            )
+          end
+
+          it { is_expected.not_to contain_resource('puppetserver') }
+
+        end
+
         context '[main]' do
           let(:params) do
             default_params.merge(

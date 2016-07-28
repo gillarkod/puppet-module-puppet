@@ -36,6 +36,7 @@ class puppet (
   # Master Config
   $master_package_name      = 'puppetserver',
   $master_package_ensure    = 'installed',
+  $master_service_manage    = true,
   $master_service_resource  = 'puppetserver',
   $master_fileserver_config = { },
 ) {
@@ -52,7 +53,8 @@ class puppet (
     $conf_main_hiera_merge,
     $conf_agent_hiera_merge,
     $conf_master_hiera_merge,
-    $conf_user_hiera_merge
+    $conf_user_hiera_merge,
+    $master_service_manage,
   )
 
   validate_absolute_path($conf_path)
