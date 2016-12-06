@@ -1,13 +1,13 @@
 {
-  "name": "propyless-puppet",
-  "version": "0.1",
+  "name": "gillarkod-puppet",
+  "version": "0.2.0",
   "author": "propyless",
   "summary": "Manage Puppet",
   "description": "Manages Puppet Agent and Master",
   "license": "Apache-2.0",
-  "source": "git://github.com/propyless/puppet-module-puppet.git",
-  "project_page": "https://github.com/propyless/puppet-module-puppet",
-  "issues_url": "https://github.com/propyless/puppet-module-puppet/issues",
+  "source": "git://github.com/gillarkod/puppet-module-puppet.git",
+  "project_page": "https://github.com/gillarkod/puppet-module-puppet",
+  "issues_url": "https://github.com/gillarkod/puppet-module-puppet/issues",
   "requirements": [
     {
       "name": "pe",
