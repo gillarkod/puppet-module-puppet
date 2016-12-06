@@ -10,4 +10,8 @@ RSpec.configure do |config|
     Facter.clear
     Facter.clear_messages
   end
+  config.default_facts = {
+    :specific      => nil, # puppet (hiera structure for test cases)
+    :very_specific => nil, # puppet (hiera structure for test cases)
+  }
 end
