@@ -36,8 +36,8 @@ class puppet::agent (
           $cron_minute = $agent_service['minute']
         }
 
-        $_cron_cmd_real =  regsubst($cron_struct, '%{puppet_bin}', $puppet_bin)
-        $cron_cmd_real =  regsubst($_cron_cmd_real, '%{puppet_args}', $cron_args)
+        $_cron_cmd_real = regsubst($cron_struct, '%\{puppet_bin\}', $puppet_bin)
+        $cron_cmd_real  = regsubst($_cron_cmd_real, '%\{puppet_args\}', $cron_args)
 
         cron { 'puppet_cron_interval':
           ensure  => $cron_ensure,
